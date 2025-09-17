@@ -1,0 +1,18 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $MyGtkAppWindow: Adw.ApplicationWindow {
+    title: "My Application";
+    default-width: 800;
+    default-height: 600;
+
+    Box {
+        orientation: vertical;
+
+        Adw.HeaderBar {}
+
+        Label {
+            label: _("Hello, World!");
+        }
+    }
+}

@@ -1,7 +1,10 @@
-use gtk::{Application, ApplicationWindow, glib};
-use gtk::{Button, prelude::*};
+mod window;
 
-const APP_ID: &str = "org.gtk_rs.HelloWorld2";
+use gtk::prelude::*;
+use gtk::{Application, glib};
+use window::Window;
+
+const APP_ID: &str = "org.gtk_rs.CompositeTemplates1";
 
 fn main() -> glib::ExitCode {
     // Create a new application
@@ -13,30 +16,8 @@ fn main() -> glib::ExitCode {
     // Run the application
     app.run()
 }
-
 fn build_ui(app: &Application) {
-    // Create a button with label and margins
-    let button = Button::builder()
-        .label("Press me!")
-        .margin_top(12)
-        .margin_bottom(12)
-        .margin_start(12)
-        .margin_end(12)
-        .build();
-
-    // Connect to "clicked" signal of `button`
-    button.connect_clicked(|button| {
-        // Set the label to "Hello World!" after the button has been clicked on
-        button.set_label("Hello World!");
-    });
-
-    // Create a window
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("My GTK App")
-        .child(&button)
-        .build();
-
-    // Present window
+    // Create new window and present it
+    let window = Window::new(app);
     window.present();
 }
