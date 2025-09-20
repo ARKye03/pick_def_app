@@ -3,7 +3,7 @@ use crate::desktop_entries::DesktopEntryManager;
 use crate::mimetype_manager::MimetypeManager;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{CompositeTemplate, ToggleButton, glib};
+use gtk::{CompositeTemplate, Label, ToggleButton, glib};
 use std::cell::RefCell;
 
 #[derive(CompositeTemplate, Default)]
@@ -11,6 +11,8 @@ use std::cell::RefCell;
 pub struct Window {
     #[template_child]
     pub filter_wrap_box: TemplateChild<adw::WrapBox>,
+    #[template_child]
+    pub apps_list_box: TemplateChild<gtk::ListBox>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
 }
@@ -56,6 +58,9 @@ impl ObjectImpl for Window {
 
         // Populate filter buttons with categories
         self.populate_filter_buttons();
+
+        // Populate apps list with all applications
+        self.populate_apps_list();
     }
 }
 
@@ -89,6 +94,28 @@ impl Window {
             button.add_css_class("pill");
 
             self.filter_wrap_box.append(&button);
+        }
+    }
+
+    pub fn populate_apps_list(&self) {
+        let desktop_manager = self.desktop_manager.borrow();
+        let entries = desktop_manager.get_entries();
+
+        // Clear existing children
+        while let Some(child) = self.apps_list_box.first_child() {
+            self.apps_list_box.remove(&child);
+        }
+
+        // Add a row for each application
+        for entry in entries {
+            let label = Label::new(Some(&entry.name));
+            label.set_halign(gtk::Align::Start);
+            label.set_margin_start(12);
+            label.set_margin_end(12);
+            label.set_margin_top(8);
+            label.set_margin_bottom(8);
+
+            self.apps_list_box.append(&label);
         }
     }
 }

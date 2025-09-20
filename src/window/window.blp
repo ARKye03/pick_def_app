@@ -11,6 +11,7 @@ template $MainWindow: Adw.ApplicationWindow {
 
         Adw.HeaderBar {
             Entry {
+                primary-icon-name: "system-search-symbolic";
                 placeholder-text: _("Search application...");
                 width-request: 250;
             }
@@ -29,12 +30,30 @@ template $MainWindow: Adw.ApplicationWindow {
             child-spacing: 5;
         }
 
+        Separator {}
+
         CenterBox {
-            ListBox {}
+            vexpand: true;
 
-            ListBox {}
+            [start]
+            ScrolledWindow {
+                hscrollbar-policy: never;
+                kinetic-scrolling: true;
+                propagate-natural-height: true;
 
-            ListBox {}
+                ListBox apps_list_box {
+                    selection-mode: single;
+                }
+            }
+
+            [center]
+            ListBox app_mime_types_list_box {
+                margin-start: 10;
+                margin-end: 10;
+            }
+
+            [end]
+            ListBox active_app_mime_types_list_box {}
         }
     }
 }
