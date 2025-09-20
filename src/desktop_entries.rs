@@ -62,6 +62,61 @@ impl DesktopEntryManager {
             .collect()
     }
 
+    pub fn get_all_categories(&self) -> Vec<String> {
+        use std::collections::HashSet;
+
+        let mut categories = HashSet::new();
+        for entry in &self.entries {
+            for category in &entry.categories {
+                if !category.is_empty() {
+                    categories.insert(category.clone());
+                }
+            }
+        }
+
+        let mut sorted_categories: Vec<String> = categories.into_iter().collect();
+        sorted_categories.sort();
+        sorted_categories
+    }
+
+    pub fn get_all_mimetypes(&self) -> Vec<String> {
+        use std::collections::HashSet;
+
+        let mut mimetypes = HashSet::new();
+        for entry in &self.entries {
+            for mimetype in &entry.mimetypes {
+                if !mimetype.is_empty() {
+                    mimetypes.insert(mimetype.clone());
+                }
+            }
+        }
+
+        let mut sorted_mimetypes: Vec<String> = mimetypes.into_iter().collect();
+        sorted_mimetypes.sort();
+        sorted_mimetypes
+    }
+
+    pub fn get_main_mimetype_categories(&self) -> Vec<String> {
+        use std::collections::HashSet;
+
+        let mut main_types = HashSet::new();
+        for entry in &self.entries {
+            for mimetype in &entry.mimetypes {
+                if !mimetype.is_empty() {
+                    // Extract the main type (part before the slash)
+                    if let Some(main_type) = mimetype.split('/').next() {
+                        if !main_type.is_empty() {
+                            main_types.insert(main_type.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut sorted_main_types: Vec<String> = main_types.into_iter().collect();
+        sorted_main_types.sort();
+        sorted_main_types
+    }
     fn parse_entry(&self, entry: DesktopEntry) -> Option<AppEntry> {
         let name = entry.name(&[] as &[String])?.to_string();
         let icon = entry.icon().map(|s| s.to_string());

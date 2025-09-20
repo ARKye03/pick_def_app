@@ -1,13 +1,16 @@
 // Object holding the state
 use crate::desktop_entries::DesktopEntryManager;
 use crate::mimetype_manager::MimetypeManager;
+use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{CompositeTemplate, glib};
+use gtk::{CompositeTemplate, ToggleButton, glib};
 use std::cell::RefCell;
 
 #[derive(CompositeTemplate, Default)]
 #[template(file = "src/window/window.blp")]
 pub struct Window {
+    #[template_child]
+    pub filter_wrap_box: TemplateChild<adw::WrapBox>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
 }
@@ -50,6 +53,9 @@ impl ObjectImpl for Window {
                 eprintln!("Failed to initialize mimetype manager: {}", e);
             }
         }
+
+        // Populate filter buttons with categories
+        self.populate_filter_buttons();
     }
 }
 
@@ -64,3 +70,25 @@ impl ApplicationWindowImpl for Window {}
 
 // Trait shared by all adwaita application windows
 impl adw::subclass::application_window::AdwApplicationWindowImpl for Window {}
+
+impl Window {
+    pub fn populate_filter_buttons(&self) {
+        let desktop_manager = self.desktop_manager.borrow();
+        let main_types = desktop_manager.get_main_mimetype_categories();
+
+        // Clear existing children
+        while let Some(child) = self.filter_wrap_box.first_child() {
+            self.filter_wrap_box.remove(&child);
+        }
+
+        // Add toggle buttons for each main mimetype category
+        for main_type in main_types {
+            let button = ToggleButton::builder().label(&main_type).build();
+
+            // Add some styling
+            button.add_css_class("pill");
+
+            self.filter_wrap_box.append(&button);
+        }
+    }
+}
