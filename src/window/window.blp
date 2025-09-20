@@ -9,10 +9,32 @@ template $MainWindow: Adw.ApplicationWindow {
     Box {
         orientation: vertical;
 
-        Adw.HeaderBar {}
+        Adw.HeaderBar {
+            Entry {
+                placeholder-text: _("Search application...");
+                width-request: 250;
+            }
 
-        Label {
-            label: _("Hello, World!");
+            [end]
+            Button {
+                label: _("Apply");
+
+                styles [
+                    "suggested-action",
+                ]
+            }
+        }
+
+        Adw.WrapBox {
+            child-spacing: 5;
+        }
+
+        CenterBox {
+            ListBox {}
+
+            ListBox {}
+
+            ListBox {}
         }
     }
 }
