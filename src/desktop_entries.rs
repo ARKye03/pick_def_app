@@ -87,3 +87,8 @@ impl DesktopEntryManager {
         })
     }
 }
+impl Default for DesktopEntryManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
