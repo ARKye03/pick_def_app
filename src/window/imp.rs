@@ -1,10 +1,16 @@
 // Object holding the state
+use crate::desktop_entries::DesktopEntryManager;
+use crate::mimetype_manager::MimetypeManager;
 use gtk::subclass::prelude::*;
 use gtk::{CompositeTemplate, glib};
+use std::cell::RefCell;
 
 #[derive(CompositeTemplate, Default)]
 #[template(file = "src/window/window.blp")]
-pub struct Window {}
+pub struct Window {
+    pub desktop_manager: RefCell<DesktopEntryManager>,
+    pub mimetype_manager: RefCell<Option<MimetypeManager>>,
+}
 
 // The central trait for subclassing a GObject
 #[glib::object_subclass]
@@ -28,6 +34,22 @@ impl ObjectImpl for Window {
     fn constructed(&self) {
         // Call "constructed" on parent
         self.parent_constructed();
+
+        // Initialize managers
+        let mut desktop_manager = DesktopEntryManager::new();
+        if let Err(e) = desktop_manager.load_entries() {
+            eprintln!("Failed to load desktop entries: {}", e);
+        }
+        self.desktop_manager.replace(desktop_manager);
+
+        match MimetypeManager::new() {
+            Ok(mimetype_manager) => {
+                self.mimetype_manager.replace(Some(mimetype_manager));
+            }
+            Err(e) => {
+                eprintln!("Failed to initialize mimetype manager: {}", e);
+            }
+        }
     }
 }
 
