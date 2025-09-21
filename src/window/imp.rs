@@ -97,8 +97,8 @@ impl Window {
         for main_type in main_types {
             let button = ToggleButton::builder().label(&main_type).build();
 
-            // Add some styling
-            button.add_css_class("pill");
+            // It's so huge, it doesn't convince me
+            // button.add_css_class("pill");
 
             self.filter_wrap_box.append(&button);
         }
@@ -135,7 +135,6 @@ impl Window {
 
             // If no filter text, show all items
             if filter_text.is_empty() {
-                println!("Empty filter text, showing all");
                 return true;
             }
 
@@ -145,25 +144,11 @@ impl Window {
                     let app_name = label.text();
                     let matcher = SkimMatcherV2::default();
                     let matches = matcher.fuzzy_match(&app_name, &filter_text).is_some();
-
-                    println!("Filter function called with text: '{}'", filter_text);
-                    println!("App '{}' matches '{}': {}", app_name, filter_text, matches);
-
                     return matches;
                 }
             }
 
             false
-        });
-
-        // Connect to entry changes to invalidate filter
-        let apps_list_box = self.apps_list_box.clone();
-        self.filter_entry.connect_changed(move |entry| {
-            let filter_text = entry.text();
-            println!("Filter text changed to: '{}'", filter_text);
-            println!("invalidate_filter() called");
-            apps_list_box.invalidate_filter();
-            println!("Calling invalidate_filter()");
         });
     }
 }
@@ -172,7 +157,6 @@ impl Window {
 impl Window {
     #[template_callback]
     fn update_apps_list(&self) {
-        println!("update_apps_list callback triggered");
         self.apps_list_box.invalidate_filter();
     }
 }
