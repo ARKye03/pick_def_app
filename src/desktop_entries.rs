@@ -41,7 +41,12 @@ impl DesktopEntryManager {
                     .unwrap_or(&app_entry.name)
                     .to_string();
 
-                self.entries.insert(key, app_entry);
+                // Temporarily, skip apps with no associated mimetypes, maybe in a future customise which app can open what?
+                if app_entry.mimetypes.is_empty() {
+                    continue;
+                } else {
+                    self.entries.insert(key, app_entry);
+                }
             }
         }
 
@@ -116,9 +121,10 @@ impl DesktopEntryManager {
                 if !mimetype.is_empty() {
                     // Extract the main type (part before the slash)
                     if let Some(main_type) = mimetype.split('/').next()
-                        && !main_type.is_empty() {
-                            main_types.insert(main_type.to_string());
-                        }
+                        && !main_type.is_empty()
+                    {
+                        main_types.insert(main_type.to_string());
+                    }
                 }
             }
         }
