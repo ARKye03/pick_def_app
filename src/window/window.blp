@@ -63,10 +63,16 @@ template $MainWindow: Adw.ApplicationWindow {
                 hscrollbar-policy: never;
                 kinetic-scrolling: true;
                 propagate-natural-height: true;
+                hexpand: true;
 
                 ListBox app_mime_types_list_box {
+                    selection-mode: multiple;
                     margin-start: 10;
                     margin-end: 10;
+
+                    styles [
+                        "boxed-list",
+                    ]
                 }
             }
 

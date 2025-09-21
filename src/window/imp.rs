@@ -16,6 +16,8 @@ pub struct Window {
     pub filter_wrap_box: TemplateChild<adw::WrapBox>,
     #[template_child]
     pub apps_list_box: TemplateChild<gtk::ListBox>,
+    #[template_child]
+    pub app_mime_types_list_box: TemplateChild<gtk::ListBox>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
 }
@@ -68,6 +70,9 @@ impl ObjectImpl for Window {
 
         // Set up filtering
         self.setup_filtering();
+
+        // Set up app selection handler
+        self.setup_app_selection();
     }
 }
 
@@ -123,7 +128,32 @@ impl Window {
             label.set_margin_top(8);
             label.set_margin_bottom(8);
 
+            // Use the label text itself to identify the app
             self.apps_list_box.append(&label);
+        }
+    }
+
+    pub fn populate_app_mimetypes(&self, app_name: &str) {
+        let desktop_manager = self.desktop_manager.borrow();
+        let entries = desktop_manager.get_entries();
+
+        // Clear existing children
+        while let Some(child) = self.app_mime_types_list_box.first_child() {
+            self.app_mime_types_list_box.remove(&child);
+        }
+
+        // Find the selected app and show its mimetypes
+        if let Some(app_entry) = entries.iter().find(|entry| entry.name == app_name) {
+            for mimetype in &app_entry.mimetypes {
+                let label = Label::new(Some(mimetype));
+                label.set_halign(gtk::Align::Start);
+                label.set_margin_start(12);
+                label.set_margin_end(12);
+                label.set_margin_top(8);
+                label.set_margin_bottom(8);
+
+                self.app_mime_types_list_box.append(&label);
+            }
         }
     }
 
@@ -141,14 +171,39 @@ impl Window {
 
             // Get the label from the row
             if let Some(child) = row.child()
-                && let Ok(label) = child.downcast::<Label>() {
-                    let app_name = label.text();
-                    let matcher = SkimMatcherV2::default();
-                    let matches = matcher.fuzzy_match(&app_name, &filter_text).is_some();
-                    return matches;
-                }
+                && let Ok(label) = child.downcast::<Label>()
+            {
+                let app_name = label.text();
+                let matcher = SkimMatcherV2::default();
+                let matches = matcher.fuzzy_match(&app_name, &filter_text).is_some();
+                return matches;
+            }
 
             false
+        });
+    }
+
+    pub fn setup_app_selection(&self) {
+        let obj = self.obj();
+        let obj_weak = obj.downgrade();
+
+        self.apps_list_box.connect_row_selected(move |_, row| {
+            if let Some(obj) = obj_weak.upgrade() {
+                let imp = obj.imp();
+                if let Some(row) = row {
+                    if let Some(child) = row.child()
+                        && let Ok(label) = child.downcast::<Label>()
+                    {
+                        let app_name = label.text();
+                        imp.populate_app_mimetypes(&app_name);
+                    }
+                } else {
+                    // No row selected, clear mimetypes
+                    while let Some(child) = imp.app_mime_types_list_box.first_child() {
+                        imp.app_mime_types_list_box.remove(&child);
+                    }
+                }
+            }
         });
     }
 }
