@@ -98,7 +98,7 @@ impl Window {
             let button = ToggleButton::builder().label(&main_type).build();
 
             // It's so huge, it doesn't convince me
-            // button.add_css_class("pill");
+            // button.add_css_class("round");
 
             self.filter_wrap_box.append(&button);
         }
