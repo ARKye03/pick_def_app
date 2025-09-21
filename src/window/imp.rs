@@ -96,6 +96,7 @@ impl Window {
         // Add toggle buttons for each main mimetype category
         for main_type in main_types {
             let button = ToggleButton::builder().label(&main_type).build();
+            button.set_active(true);
 
             // It's so huge, it doesn't convince me
             // button.add_css_class("round");
