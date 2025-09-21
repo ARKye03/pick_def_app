@@ -1,14 +1,17 @@
 // Object holding the state
 use crate::desktop_entries::DesktopEntryManager;
 use crate::mimetype_manager::MimetypeManager;
+use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{CompositeTemplate, Label, ToggleButton, glib};
+use gtk::{CompositeTemplate, Entry, Label, ToggleButton, glib};
 use std::cell::RefCell;
 
 #[derive(CompositeTemplate, Default)]
 #[template(file = "src/window/window.blp")]
 pub struct Window {
+    #[template_child]
+    pub filter_entry: TemplateChild<Entry>,
     #[template_child]
     pub filter_wrap_box: TemplateChild<adw::WrapBox>,
     #[template_child]
@@ -27,6 +30,7 @@ impl ObjectSubclass for Window {
 
     fn class_init(klass: &mut Self::Class) {
         klass.bind_template();
+        klass.bind_template_callbacks();
     }
 
     fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -61,6 +65,9 @@ impl ObjectImpl for Window {
 
         // Populate apps list with all applications
         self.populate_apps_list();
+
+        // Set up filtering
+        self.setup_filtering();
     }
 }
 
@@ -117,5 +124,55 @@ impl Window {
 
             self.apps_list_box.append(&label);
         }
+    }
+
+    pub fn setup_filtering(&self) {
+        let filter_entry = self.filter_entry.clone();
+
+        // Set up filter function for the list box
+        self.apps_list_box.set_filter_func(move |row| {
+            let filter_text = filter_entry.text();
+
+            // If no filter text, show all items
+            if filter_text.is_empty() {
+                println!("Empty filter text, showing all");
+                return true;
+            }
+
+            // Get the label from the row
+            if let Some(child) = row.child() {
+                if let Ok(label) = child.downcast::<Label>() {
+                    let app_name = label.text();
+                    let matcher = SkimMatcherV2::default();
+                    let matches = matcher.fuzzy_match(&app_name, &filter_text).is_some();
+
+                    println!("Filter function called with text: '{}'", filter_text);
+                    println!("App '{}' matches '{}': {}", app_name, filter_text, matches);
+
+                    return matches;
+                }
+            }
+
+            false
+        });
+
+        // Connect to entry changes to invalidate filter
+        let apps_list_box = self.apps_list_box.clone();
+        self.filter_entry.connect_changed(move |entry| {
+            let filter_text = entry.text();
+            println!("Filter text changed to: '{}'", filter_text);
+            println!("invalidate_filter() called");
+            apps_list_box.invalidate_filter();
+            println!("Calling invalidate_filter()");
+        });
+    }
+}
+
+#[gtk::template_callbacks]
+impl Window {
+    #[template_callback]
+    fn update_apps_list(&self) {
+        println!("update_apps_list callback triggered");
+        self.apps_list_box.invalidate_filter();
     }
 }

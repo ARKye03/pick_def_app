@@ -11,6 +11,7 @@ template $MainWindow: Adw.ApplicationWindow {
 
         Adw.HeaderBar {
             Entry filter_entry {
+                changed => $update_apps_list() swapped;
                 primary-icon-name: "system-search-symbolic";
                 placeholder-text: _("Search application...");
                 width-request: 250;
