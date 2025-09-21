@@ -1,4 +1,5 @@
 use freedesktop_desktop_entry::*;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
@@ -12,13 +13,13 @@ pub struct AppEntry {
 }
 
 pub struct DesktopEntryManager {
-    entries: Vec<AppEntry>,
+    entries: HashMap<String, AppEntry>,
 }
 
 impl DesktopEntryManager {
     pub fn new() -> Self {
         Self {
-            entries: Vec::new(),
+            entries: HashMap::new(),
         }
     }
 
@@ -29,21 +30,31 @@ impl DesktopEntryManager {
             .entries(Some(&locales))
             .collect::<Vec<_>>();
 
-        self.entries = entries
-            .into_iter()
-            .filter_map(|entry| self.parse_entry(entry))
-            .collect();
+        // Use HashMap to automatically handle duplicates - last entry wins
+        for entry in entries {
+            if let Some(app_entry) = self.parse_entry(entry) {
+                // Use the desktop file name (without .desktop extension) as key
+                let key = app_entry
+                    .path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or(&app_entry.name)
+                    .to_string();
+
+                self.entries.insert(key, app_entry);
+            }
+        }
 
         Ok(())
     }
 
-    pub fn get_entries(&self) -> &Vec<AppEntry> {
-        &self.entries
+    pub fn get_entries(&self) -> Vec<&AppEntry> {
+        self.entries.values().collect()
     }
 
     pub fn get_entries_for_mimetype(&self, mimetype: &str) -> Vec<&AppEntry> {
         self.entries
-            .iter()
+            .values()
             .filter(|entry| entry.mimetypes.contains(&mimetype.to_string()))
             .collect()
     }
@@ -51,7 +62,7 @@ impl DesktopEntryManager {
     pub fn search_entries(&self, query: &str) -> Vec<&AppEntry> {
         let query = query.to_lowercase();
         self.entries
-            .iter()
+            .values()
             .filter(|entry| {
                 entry.name.to_lowercase().contains(&query)
                     || entry
@@ -66,7 +77,7 @@ impl DesktopEntryManager {
         use std::collections::HashSet;
 
         let mut categories = HashSet::new();
-        for entry in &self.entries {
+        for entry in self.entries.values() {
             for category in &entry.categories {
                 if !category.is_empty() {
                     categories.insert(category.clone());
@@ -83,7 +94,7 @@ impl DesktopEntryManager {
         use std::collections::HashSet;
 
         let mut mimetypes = HashSet::new();
-        for entry in &self.entries {
+        for entry in self.entries.values() {
             for mimetype in &entry.mimetypes {
                 if !mimetype.is_empty() {
                     mimetypes.insert(mimetype.clone());
@@ -100,7 +111,7 @@ impl DesktopEntryManager {
         use std::collections::HashSet;
 
         let mut main_types = HashSet::new();
-        for entry in &self.entries {
+        for entry in self.entries.values() {
             for mimetype in &entry.mimetypes {
                 if !mimetype.is_empty() {
                     // Extract the main type (part before the slash)
@@ -118,7 +129,8 @@ impl DesktopEntryManager {
         sorted_main_types
     }
     fn parse_entry(&self, entry: DesktopEntry) -> Option<AppEntry> {
-        let name = entry.name(&[] as &[String])?.to_string();
+        let empty_locales: &[String] = &[];
+        let name = entry.name(empty_locales)?.to_string();
         let icon = entry.icon().map(|s| s.to_string());
         let exec = entry.exec()?.to_string();
 
