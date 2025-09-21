@@ -18,6 +18,8 @@ pub struct Window {
     pub apps_list_box: TemplateChild<gtk::ListBox>,
     #[template_child]
     pub app_mime_types_list_box: TemplateChild<gtk::ListBox>,
+    #[template_child]
+    pub mime_types_stack: TemplateChild<gtk::Stack>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
 }
@@ -144,15 +146,24 @@ impl Window {
 
         // Find the selected app and show its mimetypes
         if let Some(app_entry) = entries.iter().find(|entry| entry.name == app_name) {
-            for mimetype in &app_entry.mimetypes {
-                let label = Label::new(Some(mimetype));
-                label.set_halign(gtk::Align::Start);
-                label.set_margin_start(12);
-                label.set_margin_end(12);
-                label.set_margin_top(8);
-                label.set_margin_bottom(8);
+            if app_entry.mimetypes.is_empty() {
+                // App selected but no mimetypes - show no_mime_types_page
+                self.mime_types_stack
+                    .set_visible_child_name("no_mime_types_page");
+            } else {
+                // App has mimetypes - populate list and show list page
+                for mimetype in &app_entry.mimetypes {
+                    let label = Label::new(Some(mimetype));
+                    label.set_halign(gtk::Align::Start);
+                    label.set_margin_start(12);
+                    label.set_margin_end(12);
+                    label.set_margin_top(8);
+                    label.set_margin_bottom(8);
 
-                self.app_mime_types_list_box.append(&label);
+                    self.app_mime_types_list_box.append(&label);
+                }
+                self.mime_types_stack
+                    .set_visible_child_name("app_mime_types_list_box_page");
             }
         }
     }
@@ -198,10 +209,12 @@ impl Window {
                         imp.populate_app_mimetypes(&app_name);
                     }
                 } else {
-                    // No row selected, clear mimetypes
+                    // No row selected - clear mimetypes and show no_app_selected_page
                     while let Some(child) = imp.app_mime_types_list_box.first_child() {
                         imp.app_mime_types_list_box.remove(&child);
                     }
+                    imp.mime_types_stack
+                        .set_visible_child_name("no_app_selected_page");
                 }
             }
         });

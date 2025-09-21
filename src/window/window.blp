@@ -65,14 +65,53 @@ template $MainWindow: Adw.ApplicationWindow {
                 propagate-natural-height: true;
                 hexpand: true;
 
-                ListBox app_mime_types_list_box {
-                    selection-mode: multiple;
-                    margin-start: 10;
-                    margin-end: 10;
+                Stack mime_types_stack {
+                    transition-type: crossfade;
+                    transition-duration: 200;
 
-                    styles [
-                        "boxed-list",
-                    ]
+                    StackPage {
+                        name: "no_app_selected_page";
+
+                        child: Label {
+                            label: _("No application selected");
+                            halign: center;
+                            valign: center;
+                            opacity: 0.5;
+
+                            styles [
+                                "title-3",
+                            ]
+                        };
+                    }
+
+                    StackPage {
+                        name: "app_mime_types_list_box_page";
+
+                        child: ListBox app_mime_types_list_box {
+                            selection-mode: multiple;
+                            margin-start: 10;
+                            margin-end: 10;
+
+                            styles [
+                                "boxed-list",
+                            ]
+                        };
+                    }
+
+                    StackPage {
+                        name: "no_mime_types_page";
+
+                        child: Label {
+                            label: _("No mime types available for this application");
+                            halign: center;
+                            valign: center;
+                            opacity: 0.5;
+
+                            styles [
+                                "title-3",
+                            ]
+                        };
+                    }
                 }
             }
 
