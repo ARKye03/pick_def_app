@@ -115,11 +115,10 @@ impl DesktopEntryManager {
             for mimetype in &entry.mimetypes {
                 if !mimetype.is_empty() {
                     // Extract the main type (part before the slash)
-                    if let Some(main_type) = mimetype.split('/').next() {
-                        if !main_type.is_empty() {
+                    if let Some(main_type) = mimetype.split('/').next()
+                        && !main_type.is_empty() {
                             main_types.insert(main_type.to_string());
                         }
-                    }
                 }
             }
         }

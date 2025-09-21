@@ -140,14 +140,13 @@ impl Window {
             }
 
             // Get the label from the row
-            if let Some(child) = row.child() {
-                if let Ok(label) = child.downcast::<Label>() {
+            if let Some(child) = row.child()
+                && let Ok(label) = child.downcast::<Label>() {
                     let app_name = label.text();
                     let matcher = SkimMatcherV2::default();
                     let matches = matcher.fuzzy_match(&app_name, &filter_text).is_some();
                     return matches;
                 }
-            }
 
             false
         });
