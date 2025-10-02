@@ -293,26 +293,30 @@ impl Window {
             }
         };
 
-        // Find the app entry to get the desktop file name
-        let desktop_manager = self.desktop_manager.borrow();
-        let entries = desktop_manager.get_entries();
+        // Get the desktop file name and mimetypes - clone them to avoid borrow issues
+        let (desktop_file_name, app_mimetypes) = {
+            let desktop_manager = self.desktop_manager.borrow();
+            let entries = desktop_manager.get_entries();
 
-        let app_entry = match entries.iter().find(|entry| entry.name == selected_app_name) {
-            Some(entry) => entry,
-            None => {
-                eprintln!("Could not find app entry for {}", selected_app_name);
-                return;
-            }
-        };
+            let app_entry = match entries.iter().find(|entry| entry.name == selected_app_name) {
+                Some(entry) => entry,
+                None => {
+                    eprintln!("Could not find app entry for {}", selected_app_name);
+                    return;
+                }
+            };
 
-        // Get the desktop file name (e.g., "firefox.desktop")
-        let desktop_file_name = match app_entry.path.file_name() {
-            Some(name) => name.to_string_lossy().to_string(),
-            None => {
-                eprintln!("Could not get desktop file name from path");
-                return;
-            }
-        };
+            // Get the desktop file name (e.g., "firefox.desktop")
+            let desktop_file_name = match app_entry.path.file_name() {
+                Some(name) => name.to_string_lossy().to_string(),
+                None => {
+                    eprintln!("Could not get desktop file name from path");
+                    return;
+                }
+            };
+
+            (desktop_file_name, app_entry.mimetypes.clone())
+        }; // desktop_manager borrow ends here
 
         // Get all selected mimetypes from the list box
         let mut selected_mimetypes = Vec::new();
@@ -334,25 +338,28 @@ impl Window {
         }
 
         // Apply the changes
-        if let Some(mimetype_manager) = self.mimetype_manager.borrow_mut().as_mut() {
-            for mimetype in &selected_mimetypes {
-                if let Err(e) = mimetype_manager.set_default_app(mimetype, &desktop_file_name) {
-                    eprintln!("Failed to set default app for {}: {}", mimetype, e);
-                } else {
-                    println!("Set {} as default for {}", desktop_file_name, mimetype);
+        {
+            if let Some(mimetype_manager) = self.mimetype_manager.borrow_mut().as_mut() {
+                for mimetype in &selected_mimetypes {
+                    if let Err(e) = mimetype_manager.set_default_app(mimetype, &desktop_file_name) {
+                        eprintln!("Failed to set default app for {}: {}", mimetype, e);
+                    } else {
+                        println!("Set {} as default for {}", desktop_file_name, mimetype);
+                    }
                 }
+
+                // Show a success message
+                println!(
+                    "Successfully applied changes for {} mimetypes",
+                    selected_mimetypes.len()
+                );
+            } else {
+                eprintln!("Mimetype manager not initialized");
+                return;
             }
+        } // mimetype_manager borrow_mut ends here
 
-            // Refresh the active mimetypes display
-            self.populate_active_mimetypes(&app_entry.mimetypes);
-
-            // Show a success message (optional - could add a toast notification)
-            println!(
-                "Successfully applied changes for {} mimetypes",
-                selected_mimetypes.len()
-            );
-        } else {
-            eprintln!("Mimetype manager not initialized");
-        }
+        // Refresh the active mimetypes display
+        self.populate_active_mimetypes(&app_mimetypes);
     }
 }
