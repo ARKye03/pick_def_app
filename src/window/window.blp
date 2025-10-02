@@ -64,6 +64,8 @@ template $MainWindow: Adw.ApplicationWindow {
                 kinetic-scrolling: true;
                 propagate-natural-height: true;
                 hexpand: true;
+                margin-start: 10;
+                margin-end: 10;
 
                 Stack mime_types_stack {
                     transition-type: crossfade;
@@ -89,8 +91,6 @@ template $MainWindow: Adw.ApplicationWindow {
 
                         child: ListBox app_mime_types_list_box {
                             selection-mode: multiple;
-                            margin-start: 10;
-                            margin-end: 10;
 
                             styles [
                                 "boxed-list",
@@ -120,8 +120,15 @@ template $MainWindow: Adw.ApplicationWindow {
                 hscrollbar-policy: never;
                 kinetic-scrolling: true;
                 propagate-natural-height: true;
+                hexpand: true;
 
-                ListBox active_app_mime_types_list_box {}
+                ListBox active_app_mime_types_list_box {
+                    selection-mode: none;
+
+                    styles [
+                        "boxed-list",
+                    ]
+                }
             }
         }
     }

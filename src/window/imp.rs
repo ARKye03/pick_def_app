@@ -19,6 +19,8 @@ pub struct Window {
     #[template_child]
     pub app_mime_types_list_box: TemplateChild<gtk::ListBox>,
     #[template_child]
+    pub active_app_mime_types_list_box: TemplateChild<gtk::ListBox>,
+    #[template_child]
     pub mime_types_stack: TemplateChild<gtk::Stack>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
@@ -164,6 +166,50 @@ impl Window {
                 }
                 self.mime_types_stack
                     .set_visible_child_name("app_mime_types_list_box_page");
+
+                // Populate the active apps for these mimetypes
+                self.populate_active_mimetypes(&app_entry.mimetypes);
+            }
+        }
+    }
+
+    pub fn populate_active_mimetypes(&self, mimetypes: &[String]) {
+        // Clear existing children
+        while let Some(child) = self.active_app_mime_types_list_box.first_child() {
+            self.active_app_mime_types_list_box.remove(&child);
+        }
+
+        if let Some(mimetype_manager) = self.mimetype_manager.borrow().as_ref() {
+            for mimetype in mimetypes {
+                let default_app = mimetype_manager.get_default_app(mimetype);
+
+                // Create a box to hold mimetype and default app
+                let row_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
+                row_box.set_margin_start(12);
+                row_box.set_margin_end(12);
+                row_box.set_margin_top(8);
+                row_box.set_margin_bottom(8);
+
+                // Mimetype label
+                let mimetype_label = Label::new(Some(mimetype));
+                mimetype_label.set_halign(gtk::Align::Start);
+                mimetype_label.add_css_class("caption");
+                mimetype_label.add_css_class("dim-label");
+
+                // Default app label
+                let default_label = if let Some(app) = default_app {
+                    Label::new(Some(&format!("→ {}", app)))
+                } else {
+                    let label = Label::new(Some("→ No default set"));
+                    label.add_css_class("dim-label");
+                    label
+                };
+                default_label.set_halign(gtk::Align::Start);
+
+                row_box.append(&mimetype_label);
+                row_box.append(&default_label);
+
+                self.active_app_mime_types_list_box.append(&row_box);
             }
         }
     }
@@ -212,6 +258,9 @@ impl Window {
                     // No row selected - clear mimetypes and show no_app_selected_page
                     while let Some(child) = imp.app_mime_types_list_box.first_child() {
                         imp.app_mime_types_list_box.remove(&child);
+                    }
+                    while let Some(child) = imp.active_app_mime_types_list_box.first_child() {
+                        imp.active_app_mime_types_list_box.remove(&child);
                     }
                     imp.mime_types_stack
                         .set_visible_child_name("no_app_selected_page");
