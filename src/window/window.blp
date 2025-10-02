@@ -18,8 +18,9 @@ template $MainWindow: Adw.ApplicationWindow {
             }
 
             [end]
-            Button {
+            Button apply_button {
                 label: _("Apply");
+                clicked => $on_apply_clicked() swapped;
 
                 styles [
                     "suggested-action",

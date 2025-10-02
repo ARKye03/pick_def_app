@@ -22,8 +22,11 @@ pub struct Window {
     pub active_app_mime_types_list_box: TemplateChild<gtk::ListBox>,
     #[template_child]
     pub mime_types_stack: TemplateChild<gtk::Stack>,
+    #[template_child]
+    pub apply_button: TemplateChild<gtk::Button>,
     pub desktop_manager: RefCell<DesktopEntryManager>,
     pub mimetype_manager: RefCell<Option<MimetypeManager>>,
+    pub selected_app_name: RefCell<Option<String>>,
 }
 
 // The central trait for subclassing a GObject
@@ -252,10 +255,12 @@ impl Window {
                         && let Ok(label) = child.downcast::<Label>()
                     {
                         let app_name = label.text();
+                        imp.selected_app_name.replace(Some(app_name.to_string()));
                         imp.populate_app_mimetypes(&app_name);
                     }
                 } else {
                     // No row selected - clear mimetypes and show no_app_selected_page
+                    imp.selected_app_name.replace(None);
                     while let Some(child) = imp.app_mime_types_list_box.first_child() {
                         imp.app_mime_types_list_box.remove(&child);
                     }
@@ -275,5 +280,79 @@ impl Window {
     #[template_callback]
     fn update_apps_list(&self) {
         self.apps_list_box.invalidate_filter();
+    }
+
+    #[template_callback]
+    fn on_apply_clicked(&self) {
+        // Get the selected app name
+        let selected_app_name = match self.selected_app_name.borrow().as_ref() {
+            Some(name) => name.clone(),
+            None => {
+                eprintln!("No app selected");
+                return;
+            }
+        };
+
+        // Find the app entry to get the desktop file name
+        let desktop_manager = self.desktop_manager.borrow();
+        let entries = desktop_manager.get_entries();
+
+        let app_entry = match entries.iter().find(|entry| entry.name == selected_app_name) {
+            Some(entry) => entry,
+            None => {
+                eprintln!("Could not find app entry for {}", selected_app_name);
+                return;
+            }
+        };
+
+        // Get the desktop file name (e.g., "firefox.desktop")
+        let desktop_file_name = match app_entry.path.file_name() {
+            Some(name) => name.to_string_lossy().to_string(),
+            None => {
+                eprintln!("Could not get desktop file name from path");
+                return;
+            }
+        };
+
+        // Get all selected mimetypes from the list box
+        let mut selected_mimetypes = Vec::new();
+        let mut row_index = 0;
+        while let Some(row) = self.app_mime_types_list_box.row_at_index(row_index) {
+            if row.is_selected() {
+                if let Some(child) = row.child()
+                    && let Ok(label) = child.downcast::<Label>()
+                {
+                    selected_mimetypes.push(label.text().to_string());
+                }
+            }
+            row_index += 1;
+        }
+
+        if selected_mimetypes.is_empty() {
+            eprintln!("No mimetypes selected");
+            return;
+        }
+
+        // Apply the changes
+        if let Some(mimetype_manager) = self.mimetype_manager.borrow_mut().as_mut() {
+            for mimetype in &selected_mimetypes {
+                if let Err(e) = mimetype_manager.set_default_app(mimetype, &desktop_file_name) {
+                    eprintln!("Failed to set default app for {}: {}", mimetype, e);
+                } else {
+                    println!("Set {} as default for {}", desktop_file_name, mimetype);
+                }
+            }
+
+            // Refresh the active mimetypes display
+            self.populate_active_mimetypes(&app_entry.mimetypes);
+
+            // Show a success message (optional - could add a toast notification)
+            println!(
+                "Successfully applied changes for {} mimetypes",
+                selected_mimetypes.len()
+            );
+        } else {
+            eprintln!("Mimetype manager not initialized");
+        }
     }
 }
