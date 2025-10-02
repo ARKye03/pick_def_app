@@ -24,13 +24,6 @@
         };
         version = builtins.replaceStrings [ "\n" ] [ "" ] (builtins.readFile ./version);
 
-        pkg-dependencies = with pkgs; [
-          pkg-config
-          libadwaita
-          gtk4
-          blueprint-compiler
-        ];
-
         pick_def_app = pkgs.rustPlatform.buildRustPackage {
           pname = "pick_def_app";
           version = version;
@@ -43,9 +36,18 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             blueprint-compiler
+            wrapGAppsHook4
           ];
 
-          buildInputs = pkg-dependencies;
+          buildInputs = with pkgs; [
+            gtk4
+            libadwaita
+            glib
+            cairo
+            pango
+            gdk-pixbuf
+            graphene
+          ];
         };
       in
       {
@@ -56,8 +58,11 @@
               openssl
               pkg-config
               rust-bin.stable.latest.default
-            ]
-            ++ pkg-dependencies;
+              blueprint-compiler
+              gtk4
+              libadwaita
+              glib
+            ];
           };
         packages.default = pick_def_app;
       }
