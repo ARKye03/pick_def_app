@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Pick Default Application
+Comment=Pick default application for a given file type
+Exec=/usr/bin/pick_def_app
+Icon=pick_def_app
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=false
+NoDisplay=true
