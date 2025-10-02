@@ -9,4 +9,3 @@ Categories=Utility;
 Keywords=GTK;
 StartupNotify=true
 DBusActivatable=false
-NoDisplay=true
