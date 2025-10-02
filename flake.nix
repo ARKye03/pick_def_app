@@ -24,16 +24,28 @@
         };
         version = builtins.replaceStrings [ "\n" ] [ "" ] (builtins.readFile ./version);
 
-        pick_def_app = pkgs.stdenv.mkDerivation {
+        pkg-dependencies = with pkgs; [
+          pkg-config
+          libadwaita
+          gtk4
+          blueprint-compiler
+        ];
+
+        pick_def_app = pkgs.rustPlatform.buildRustPackage {
           pname = "pick_def_app";
           version = version;
           src = ./.;
-          buildInputs = [ pkgs.rust-bin.stable.latest.default ];
-          cargoBuildFlags = [ "--release" ];
-          installPhase = ''
-            mkdir -p $out/bin
-            cp target/release/my-rust-app $out/bin/
-          '';
+
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            blueprint-compiler
+          ];
+
+          buildInputs = pkg-dependencies;
         };
       in
       {
@@ -44,7 +56,8 @@
               openssl
               pkg-config
               rust-bin.stable.latest.default
-            ];
+            ]
+            ++ pkg-dependencies;
           };
         packages.default = pick_def_app;
       }
